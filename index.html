@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<!-- 
+  チラシノウラ
+  Version: 1.0.0 (更新日: 2026-05-12)
+  Author: TK Lab. (https://x.com/TK_Lab_)
+  Description: 好きな文字を好きなだけ打っていいタイピングゲーム。
+  License: このコードは個人利用・改変・再配布自由ですが、商用利用はご遠慮ください。
+           クレジット表記を削除しないでください。
+  Credits:
+    - Font:Noto Sans JP (Google Fonts)
+  ChangeLog:
+    - 2026-05-12 (v1.0.0)
+      ・初版公開
+-->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>チラシノウラ</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+        
+        body {
+            margin: 0; padding: 0; font-family: 'Noto Sans JP', sans-serif;
+            background: #f8fafc;
+            color: #1f2937;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+
+        header { 
+            padding: 25px 20px 15px; 
+            background: rgba(248, 250, 252, 0.98); 
+            backdrop-filter: blur(10px);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: 700;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .timer-wrapper {
+            background: rgba(248, 250, 252, 0.98);
+            padding: 20px 0px 0px;
+            text-align: center;
+        }
+
+        .timer-area {
+            position: relative;
+            background: #ffffff; 
+            border: 2px solid #cbd5e1;
+            border-radius: 9999px;
+            padding: 0px 0;
+            box-shadow: 0 2px 10px rgba(59,130,246,0.15);
+            width: 320px;
+            height: 100px;
+            margin: 0 auto;
+            transition: border-color 0.4s ease, box-shadow 0.4s ease;
+            cursor: default;
+        }
+
+        .time-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .time-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 88px;
+        }
+
+        .time-unit .number {
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            color: #E67E00;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .timer-area.result .number,
+        .timer-area.result .time-unit .number,
+        #countdown-display.result .number {
+            color: #64748b !important;
+        }
+
+        .time-unit .label {
+            font-size: 16px;
+            color: #64748b;
+            line-height: 1;
+            width: 66%;
+            text-align: right;
+        }
+
+        .colon {
+            color: #64748b;
+            font-weight: bold;
+            font-size: 36px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            height: 24px;
+            margin-top: 0;
+            padding-top: 0;
+            transform: translateY(4px);
+        }
+
+
+        .user-guide {
+            margin-top: 8px;
+            font-size: 16px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        main { 
+            flex: 1; 
+            padding: 20px; 
+            gap: 20px; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column;
+            position: relative;
+        }
+
+        #input-area {
+            flex: 1;
+            background: rgba(255,255,255,0.98);
+            color: #1f2937;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Noto Sans JP';
+            font-size: 24px;
+            line-height: 1.7;
+            resize: none;
+            outline: none;
+            overflow-y: scroll;
+        }
+
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
+
+        .stat-card {
+            background: #ffffff; 
+            backdrop-filter: blur(10px); 
+            padding: 15px 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #cbd5e1;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 8px 0;
+            min-height: 2.4rem;
+        }
+
+        .stat-label {
+            font-size: 24px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .stat-unit {
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        #keystrokes, #kpm { color: #16A34A; }
+        #char-count, #cpm { color: #2563EB; }
+
+        .graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        .graph-container {
+            background: #ffffff; 
+            backdrop-filter: blur(10px);
+            padding: 15px 15px 35px 15px;
+            border-radius: 12px; height: 290px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow-x: auto; overflow-y: hidden;
+        }
+
+        .graph-header {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+        footer {
+            padding: 12px 20px; 
+            text-align: center; 
+            font-size: 16px; 
+            color: #64748b; 
+            background: rgba(248, 250, 252, 0.98); 
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="title">チラシノウラ</div>
+    </header>
+
+    <div class="timer-wrapper">        
+        <div class="timer-area" id="timer-area">
+            <div class="time-display" id="countdown-display">
+                <div class="time-unit">
+                    <span id="cd-hours" class="number">00</span>
+                    <div class="label">時間</div>
+                </div>
+                <span class="colon">:</span>
+                <div class="time-unit">
+                    <span id="cd-minutes" class="number">00</span>
+                    <div class="label">分</div>
+                </div>
+                <span class="colon">:</span>
+                <div class="time-unit">
+                    <span id="cd-seconds" class="number">00</span>
+                    <div class="label">秒</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="user-guide" class="user-guide">文字を入力してスタート（Ctrl + Enterで終了）</div>
+    </div>        
+
+    <main>
+        <textarea id="input-area" placeholder="ここに自由に文章を入力してください" spellcheck="false"></textarea>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">打鍵数</div>
+                <div class="stat-value" id="keystrokes">0</div>
+                <div class="stat-unit">[打]</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">打鍵速度</div>
+                <div class="stat-value" id="kpm">—</div>
+                <div class="stat-unit">[打/分]</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">入力数</div>
+                <div class="stat-value" id="char-count">0</div>
+                <div class="stat-unit">[文字]</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">入力速度</div>
+                <div class="stat-value" id="cpm">—</div>
+                <div class="stat-unit">[文字/分]</div>
+            </div>
+        </div>
+
+        <div class="graphs">
+            <div class="graph-container">
+                <div class="graph-header">打鍵速度 [打/分]</div>
+                <canvas id="kpmChart"></canvas>
+            </div>
+            <div class="graph-container">
+                <div class="graph-header">入力速度 [文字/分]</div>
+                <canvas id="cpmChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        制作者：TK Lab.（<a href="https://x.com/TK_Lab_" target="_blank" rel="noopener noreferrer" style="color: #1DA1F2; text-decoration: underline;">@TK_Lab_</a>）<br>
+        ゲームプレイのスクリーンショット、記録画像、プレイ動画のSNS投稿・アップロード・配信は自由です。<br>
+        Version 1.0.0
+    </footer>
+
+    <script>
+        const inputArea = document.getElementById('input-area');
+        const timerArea = document.getElementById('timer-area');
+        const countdownDisplay = document.getElementById('countdown-display');
+        const cdHours = document.getElementById('cd-hours');
+        const cdMinutes = document.getElementById('cd-minutes');
+        const cdSeconds = document.getElementById('cd-seconds');
+        const userGuide = document.getElementById('user-guide');
+
+        const keystrokesEl = document.getElementById('keystrokes');
+        const charCountEl = document.getElementById('char-count');
+        const kpmEl = document.getElementById('kpm');
+        const cpmEl = document.getElementById('cpm');
+
+        let isRunning = false, isEnded = false, startTimestamp = null;
+        let totalKeystrokes = 0;
+        let history = [];
+        let kpmChart, cpmChart;
+        let timerInterval = null;
+
+        const WINDOW_SECONDS = 30;
+
+        function pad2(num) { return num.toString().padStart(2, '0'); }
+
+        function updateTimerDisplay() {
+            if (!startTimestamp) return;
+            const elapsed = Math.floor((Date.now() - startTimestamp) / 1000);
+            const h = Math.floor(elapsed / 3600);
+            const m = Math.floor((elapsed % 3600) / 60);
+            const s = elapsed % 60;
+            cdHours.textContent = pad2(h);
+            cdMinutes.textContent = pad2(m);
+            cdSeconds.textContent = pad2(s);
+        }
+
+        function initCharts() {
+            const opt = {
+                responsive: true, 
+                maintainAspectRatio: false,
+                layout: { padding: { bottom: 20 } },
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true },
+                    x: { 
+                        type: 'linear', 
+                        min: 0, 
+                        max: WINDOW_SECONDS,
+                        ticks: { stepSize: 5 },
+                        title: { display: true, text: '経過時間 [秒]', font: {size:'16px'}, color: '#64748b' }
+                    }
+                }
+            };
+            kpmChart = new Chart(document.getElementById('kpmChart'), { 
+                type: 'line', 
+                data: { labels: [], datasets: [{ borderColor: '#16A34A', backgroundColor: 'rgba(34,197,94,0.2)', tension: 0, borderWidth: 2, pointRadius: 1.5, fill: true }] },
+                options: JSON.parse(JSON.stringify(opt)) 
+            });
+            cpmChart = new Chart(document.getElementById('cpmChart'), { 
+                type: 'line', 
+                data: { labels: [], datasets: [{ borderColor: '#2563EB', backgroundColor: 'rgba(59,130,246,0.2)', tension: 0, borderWidth: 2, pointRadius: 1.5, fill: true }] },
+                options: JSON.parse(JSON.stringify(opt)) 
+            });
+        }
+
+        function updateUserGuide() {
+            if (isEnded) {
+                userGuide.textContent = "Escでもう一度";
+            } else if (isRunning) {
+                userGuide.textContent = "Ctrl + Enterで終了";
+            } else {
+                userGuide.textContent = "文字を入力してスタート（Ctrl + Enterで終了）";
+            }
+        }
+
+        function updateStats(force = false) {
+            if (!startTimestamp) return;
+            const now = Date.now();
+            const elapsed = Math.floor((now - startTimestamp) / 1000);
+            const chars = inputArea.value.length;
+
+            keystrokesEl.textContent = totalKeystrokes;
+            charCountEl.textContent = chars;
+
+            if (!force && history.length > 0 && history[history.length-1].time === elapsed) {
+                if (isEnded) updateGraphs();
+                return;
+            }
+
+            history.push({ time: elapsed, keystrokes: totalKeystrokes, chars: chars });
+
+            const validHistory = history.filter(h => h.time >= 1);
+
+            // ==================== 速度表示 ====================
+            if (isEnded) {
+                const elapsedMin = elapsed / 60;
+                kpmEl.textContent = elapsedMin > 0 ? Math.round(totalKeystrokes / elapsedMin) : 0;
+                cpmEl.textContent = elapsedMin > 0 ? Math.round(chars / elapsedMin) : 0;
+            } else {
+                if (history.length >= 2) {
+                    const current = history[history.length - 1];
+                    let prevIndex = history.length - 2;
+                    while (prevIndex >= 0 && current.time - history[prevIndex].time <= 1) {
+                        prevIndex--;
+                    }
+                    const prev = history[prevIndex + 1];
+
+                    const dt = Math.max(1, current.time - prev.time);
+                    const deltaKeys = current.keystrokes - prev.keystrokes;
+                    const deltaChars = current.chars - prev.chars;
+
+                    kpmEl.textContent = Math.round(deltaKeys / dt * 60);
+                    cpmEl.textContent = Math.round(deltaChars / dt * 60);
+                } else {
+                    kpmEl.textContent = '—';
+                    cpmEl.textContent = '—';
+                }
+            }
+
+            // ==================== グラフ更新 ====================
+            updateGraphs();
+        }
+
+        function updateGraphs() {
+            const validHistory = history.filter(h => h.time >= 1);
+            const elapsed = startTimestamp ? Math.floor((Date.now() - startTimestamp) / 1000) : 0;
+
+            if (isEnded) {
+                const maxTime = Math.max(WINDOW_SECONDS, elapsed);
+                
+                kpmChart.data.labels = validHistory.map(h => h.time);
+                kpmChart.data.datasets[0].data = validHistory.map((h, i) => {
+                    if (i === 0) return h.time > 0 ? Math.round(h.keystrokes / h.time * 60) : 0;
+                    const prev = validHistory[i-1];
+                    const dt = Math.max(1, h.time - prev.time);
+                    return Math.round((h.keystrokes - prev.keystrokes) / dt * 60);
+                });
+
+                cpmChart.data.labels = validHistory.map(h => h.time);
+                cpmChart.data.datasets[0].data = validHistory.map((h, i) => {
+                    if (i === 0) return h.time > 0 ? Math.round(h.chars / h.time * 60) : 0;
+                    const prev = validHistory[i-1];
+                    const dt = Math.max(1, h.time - prev.time);
+                    return Math.round((h.chars - prev.chars) / dt * 60);
+                });
+
+                kpmChart.options.scales.x.min = 0;
+                kpmChart.options.scales.x.max = maxTime;
+                cpmChart.options.scales.x.min = 0;
+                cpmChart.options.scales.x.max = maxTime;
+
+            } else {
+                const windowEnd = Math.max(WINDOW_SECONDS, elapsed);
+                const windowStart = windowEnd - WINDOW_SECONDS;
+
+                kpmChart.data.labels = validHistory.map(h => h.time);
+                kpmChart.data.datasets[0].data = validHistory.map((h, i) => {
+                    if (i === 0) return h.time > 0 ? Math.round(h.keystrokes / h.time * 60) : 0;
+                    const prev = validHistory[i-1];
+                    const dt = Math.max(1, h.time - prev.time);
+                    return Math.round((h.keystrokes - prev.keystrokes) / dt * 60);
+                });
+
+                cpmChart.data.labels = validHistory.map(h => h.time);
+                cpmChart.data.datasets[0].data = validHistory.map((h, i) => {
+                    if (i === 0) return h.time > 0 ? Math.round(h.chars / h.time * 60) : 0;
+                    const prev = validHistory[i-1];
+                    const dt = Math.max(1, h.time - prev.time);
+                    return Math.round((h.chars - prev.chars) / dt * 60);
+                });
+
+                kpmChart.options.scales.x.min = windowStart;
+                kpmChart.options.scales.x.max = windowEnd;
+                cpmChart.options.scales.x.min = windowStart;
+                cpmChart.options.scales.x.max = windowEnd;
+            }
+
+            if (isEnded) {
+                kpmChart.update();
+                cpmChart.update();
+            } else {
+                kpmChart.update('none');
+                cpmChart.update('none');
+            }
+        }
+
+        function startGame() {
+            if (isRunning) return;
+            isRunning = true;
+            isEnded = false;
+            startTimestamp = Date.now();
+            totalKeystrokes = 0;
+            history = [];
+            inputArea.readOnly = false;
+            timerArea.classList.remove('result');
+            updateUserGuide();
+            updateTimerDisplay();
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                updateTimerDisplay();
+                updateStats();
+            }, 50);
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            isEnded = true;
+            timerArea.classList.add('result');
+            updateStats(true);
+            inputArea.readOnly = true;
+            updateUserGuide();
+        }
+
+        function resetGame() {
+            if (timerInterval) clearInterval(timerInterval);
+            isRunning = false;
+            isEnded = false;
+            startTimestamp = null;
+            totalKeystrokes = 0;
+            history = [];
+
+            inputArea.value = '';
+            inputArea.readOnly = false;
+            timerArea.classList.remove('result');
+
+            cdHours.textContent = '00';
+            cdMinutes.textContent = '00';
+            cdSeconds.textContent = '00';
+
+            keystrokesEl.textContent = '0';
+            charCountEl.textContent = '0';
+            kpmEl.textContent = '—';
+            cpmEl.textContent = '—';
+
+            if (kpmChart) {
+                kpmChart.data.labels = []; 
+                kpmChart.data.datasets[0].data = [];
+                kpmChart.options.scales.x.min = 0;
+                kpmChart.options.scales.x.max = WINDOW_SECONDS;
+                kpmChart.update();
+            }
+            if (cpmChart) {
+                cpmChart.data.labels = []; 
+                cpmChart.data.datasets[0].data = [];
+                cpmChart.options.scales.x.min = 0;
+                cpmChart.options.scales.x.max = WINDOW_SECONDS;
+                cpmChart.update();
+            }
+
+            updateUserGuide();
+        }
+
+        inputArea.addEventListener('keydown', e => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                if (isRunning) endGame();
+                return;
+            }
+            if (e.key === "Escape" && isEnded) {
+                e.preventDefault();
+                resetGame();
+                return;
+            }
+
+            if (e.key === 'Tab') {
+                e.preventDefault();
+        
+                const start = inputArea.selectionStart;
+                const end = inputArea.selectionEnd;
+        
+                inputArea.value = inputArea.value.substring(0, start) + '\t' + inputArea.value.substring(end);
+                inputArea.selectionStart = inputArea.selectionEnd = start + 1;        
+                updateStats();
+            }
+
+            if (e.repeat) return;
+
+            if (!isRunning && !isEnded) {
+                startGame();
+            }
+            totalKeystrokes++;
+        });
+
+        inputArea.addEventListener('input', () => {
+            if (!isRunning && !isEnded) {
+                startGame();
+            }
+            updateStats();
+        });
+
+        window.onload = () => {
+            initCharts();
+            resetGame();
+            setTimeout(() => inputArea.focus(), 300);
+        };
+    </script>
+</body>
+</html>
