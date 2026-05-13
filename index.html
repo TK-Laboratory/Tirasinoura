@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- 
   チラシノウラ
-  Version: 1.0.1 (更新日: 2026-05-13)
+  Version: 1.0.2 (更新日: 2026-05-13)
   Author: TK Lab. (https://x.com/TK_Lab_)
   Description: 好きな文字を好きなだけ打っていいタイピングゲーム。
   License: このコードは個人利用・改変・再配布自由ですが、商用利用はご遠慮ください。
@@ -13,6 +13,8 @@
       ・初版公開
     - 2026-05-13 (v1.0.1)
       ・プレースホルダを修正
+    - 2026-05-13 (v1.0.2)
+      ・レイアウトを修正
 -->
 <html lang="ja">
 <head>
@@ -45,7 +47,7 @@
         }
 
         .title {
-            font-size: 48px;
+            font-size: 32px;
             font-weight: 700;
             color: #64748b;
             margin: 0;
@@ -91,7 +93,7 @@
         }
 
         .time-unit .number {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: bold;
             text-align: center;
             color: #E67E00;
@@ -116,16 +118,15 @@
         .colon {
             color: #64748b;
             font-weight: bold;
-            font-size: 36px;
+            font-size: 32px;
             line-height: 1;
             display: flex;
             align-items: center;
             height: 24px;
             margin-top: 0;
             padding-top: 0;
-            transform: translateY(4px);
+            transform: translateY(2px);
         }
-
 
         .user-guide {
             margin-top: 8px;
@@ -154,7 +155,7 @@
             border-radius: 12px;
             padding: 20px;
             font-family: 'Noto Sans JP';
-            font-size: 24px;
+            font-size: 20px;
             line-height: 1.7;
             resize: none;
             outline: none;
@@ -166,28 +167,29 @@
         .stat-card {
             background: #ffffff; 
             backdrop-filter: blur(10px); 
-            padding: 15px 20px;
+            padding: 0px 20px;
             border-radius: 12px;
             text-align: center;
             border: 1px solid #cbd5e1;
         }
 
         .stat-value {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: bold;
-            margin: 8px 0;
+            margin: 0px 0;
             min-height: 2.4rem;
         }
 
         .stat-label {
-            font-size: 24px;
+            font-size: 20px;
             color: #64748b;
-            margin-bottom: 4px;
+            margin-bottom: 0px;
         }
 
         .stat-unit {
             font-size: 16px;
             color: #64748b;
+            margin-bottom: 2px;
         }
 
         #keystrokes, #kpm { color: #16A34A; }
@@ -199,7 +201,7 @@
             background: #ffffff; 
             backdrop-filter: blur(10px);
             padding: 15px 15px 35px 15px;
-            border-radius: 12px; height: 290px;
+            border-radius: 12px; height: 200px;
             border: 1px solid #cbd5e1;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             overflow-x: auto; overflow-y: hidden;
@@ -291,7 +293,7 @@
     <footer>
         制作者：TK Lab.（<a href="https://x.com/TK_Lab_" target="_blank" rel="noopener noreferrer" style="color: #1DA1F2; text-decoration: underline;">@TK_Lab_</a>）<br>
         ゲームプレイのスクリーンショット、記録画像、プレイ動画のSNS投稿・アップロード・配信は自由です。<br>
-        Version 1.0.1
+        Version 1.0.2
     </footer>
 
     <script>
