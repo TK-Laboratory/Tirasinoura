@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- 
   チラシノウラ
-  Version: 1.0.3 (更新日: 2026-05-13)
+  Version: 1.0.4 (更新日: 2026-05-13)
   Author: TK Lab. (https://x.com/TK_Lab_)
   Description: 好きな文字を好きなだけ打っていいタイピングゲーム。
   License: このコードは個人利用・改変・再配布自由ですが、商用利用はご遠慮ください。
@@ -17,6 +17,8 @@
       ・レイアウトを修正
     - 2026-05-13 (v1.0.3)
       ・終了時、余計な点がプロットされるバグを修正
+    - 2026-05-13 (v1.0.4)
+      ・終了時、速度表示がトータル速度にならないバグを修正
 -->
 <html lang="ja">
 <head>
@@ -295,7 +297,7 @@
     <footer>
         制作者：TK Lab.（<a href="https://x.com/TK_Lab_" target="_blank" rel="noopener noreferrer" style="color: #1DA1F2; text-decoration: underline;">@TK_Lab_</a>）<br>
         ゲームプレイのスクリーンショット、記録画像、プレイ動画のSNS投稿・アップロード・配信は自由です。<br>
-        Version 1.0.3
+        Version 1.0.4
     </footer>
 
     <script>
@@ -372,52 +374,57 @@
             }
         }
 
-        function updateStats(force = false) {
-            if (!startTimestamp) return;
-            const now = Date.now();
-            const elapsed = Math.floor((now - startTimestamp) / 1000);
-            const chars = inputArea.value.length;
+        function updateStats() {
+                if (!startTimestamp) return;
+                const now = Date.now();
+                const elapsed = Math.floor((now - startTimestamp) / 1000);
+                const chars = inputArea.value.length;
 
-            keystrokesEl.textContent = totalKeystrokes;
-            charCountEl.textContent = chars;
+                keystrokesEl.textContent = totalKeystrokes;
+                charCountEl.textContent = chars;
 
-            if (!force && history.length > 0 && history[history.length-1].time === elapsed) {
-                if (isEnded) updateGraphs();
-                return;
-            }
-
-            history.push({ time: elapsed, keystrokes: totalKeystrokes, chars: chars });
-
-            const validHistory = history.filter(h => h.time >= 1);
-
-            // ==================== 速度表示 ====================
-            if (isEnded) {
-                const elapsedMin = elapsed / 60;
-                kpmEl.textContent = elapsedMin > 0 ? Math.round(totalKeystrokes / elapsedMin) : 0;
-                cpmEl.textContent = elapsedMin > 0 ? Math.round(chars / elapsedMin) : 0;
-            } else {
-                if (history.length >= 2) {
-                    const current = history[history.length - 1];
-                    let prevIndex = history.length - 2;
-                    while (prevIndex >= 0 && current.time - history[prevIndex].time <= 1) {
-                        prevIndex--;
-                    }
-                    const prev = history[prevIndex + 1];
-
-                    const dt = Math.max(1, current.time - prev.time);
-                    const deltaKeys = current.keystrokes - prev.keystrokes;
-                    const deltaChars = current.chars - prev.chars;
-
-                    kpmEl.textContent = Math.round(deltaKeys / dt * 60);
-                    cpmEl.textContent = Math.round(deltaChars / dt * 60);
-                } else {
-                    kpmEl.textContent = '—';
-                    cpmEl.textContent = '—';
+                // ==================== historyへの追加 ====================
+                if (!isEnded) {
+                        const lastTime = history.length > 0 ? history[history.length-1].time : -1;
+                        if (elapsed > lastTime) {
+                                history.push({ 
+                                        time: elapsed, 
+                                        keystrokes: totalKeystrokes, 
+                                        chars: chars 
+                                });
+                        }
                 }
-            }
 
-            // ==================== グラフ更新 ====================
-            updateGraphs();
+                const validHistory = history.filter(h => h.time >= 1);
+
+                // ==================== 速度表示 ====================
+                if (isEnded) {
+                        const elapsedMin = elapsed / 60;
+                        kpmEl.textContent = elapsedMin > 0 ? Math.round(totalKeystrokes / elapsedMin) : 0;
+                        cpmEl.textContent = elapsedMin > 0 ? Math.round(chars / elapsedMin) : 0;
+                } else {
+                        if (history.length >= 2) {
+                                const current = history[history.length - 1];
+                                let prevIndex = history.length - 2;
+                                while (prevIndex >= 0 && current.time - history[prevIndex].time <= 1) {
+                                        prevIndex--;
+                                }
+                                const prev = history[prevIndex + 1];
+
+                                const dt = Math.max(1, current.time - prev.time);
+                                const deltaKeys = current.keystrokes - prev.keystrokes;
+                                const deltaChars = current.chars - prev.chars;
+
+                                kpmEl.textContent = Math.round(deltaKeys / dt * 60);
+                                cpmEl.textContent = Math.round(deltaChars / dt * 60);
+                        } else {
+                                kpmEl.textContent = '—';
+                                cpmEl.textContent = '—';
+                        }
+                }
+
+                // ==================== グラフ更新 ====================
+                updateGraphs();
         }
 
         function updateGraphs() {
