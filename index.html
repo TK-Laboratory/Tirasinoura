@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- 
   チラシノウラ
-  Version: 1.0.2 (更新日: 2026-05-13)
+  Version: 1.0.3 (更新日: 2026-05-13)
   Author: TK Lab. (https://x.com/TK_Lab_)
   Description: 好きな文字を好きなだけ打っていいタイピングゲーム。
   License: このコードは個人利用・改変・再配布自由ですが、商用利用はご遠慮ください。
@@ -15,6 +15,8 @@
       ・プレースホルダを修正
     - 2026-05-13 (v1.0.2)
       ・レイアウトを修正
+    - 2026-05-13 (v1.0.3)
+      ・終了時、余計な点がプロットされるバグを修正
 -->
 <html lang="ja">
 <head>
@@ -293,7 +295,7 @@
     <footer>
         制作者：TK Lab.（<a href="https://x.com/TK_Lab_" target="_blank" rel="noopener noreferrer" style="color: #1DA1F2; text-decoration: underline;">@TK_Lab_</a>）<br>
         ゲームプレイのスクリーンショット、記録画像、プレイ動画のSNS投稿・アップロード・配信は自由です。<br>
-        Version 1.0.2
+        Version 1.0.3
     </footer>
 
     <script>
@@ -505,7 +507,7 @@
             isRunning = false;
             isEnded = true;
             timerArea.classList.add('result');
-            updateStats(true);
+            updateStats(false);
             inputArea.readOnly = true;
             updateUserGuide();
         }
