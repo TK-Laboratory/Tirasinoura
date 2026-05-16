@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- 
   チラシノウラ
-  Version: 1.0.4 (更新日: 2026-05-13)
+  Version: 1.0.5 (更新日: 2026-05-16)
   Author: TK Lab. (https://x.com/TK_Lab_)
   Description: 好きな文字を好きなだけ打っていいタイピングゲーム。
   License: このコードは個人利用・改変・再配布自由ですが、商用利用はご遠慮ください。
@@ -19,6 +19,8 @@
       ・終了時、余計な点がプロットされるバグを修正
     - 2026-05-13 (v1.0.4)
       ・終了時、速度表示がトータル速度にならないバグを修正
+    - 2026-05-16 (v1.0.5)
+      ・グラフの見た目を少し調整
 -->
 <html lang="ja">
 <head>
@@ -297,7 +299,7 @@
     <footer>
         制作者：TK Lab.（<a href="https://x.com/TK_Lab_" target="_blank" rel="noopener noreferrer" style="color: #1DA1F2; text-decoration: underline;">@TK_Lab_</a>）<br>
         ゲームプレイのスクリーンショット、記録画像、プレイ動画のSNS投稿・アップロード・配信は自由です。<br>
-        Version 1.0.4
+        Version 1.0.5
     </footer>
 
     <script>
@@ -354,12 +356,32 @@
             };
             kpmChart = new Chart(document.getElementById('kpmChart'), { 
                 type: 'line', 
-                data: { labels: [], datasets: [{ borderColor: '#16A34A', backgroundColor: 'rgba(34,197,94,0.2)', tension: 0, borderWidth: 2, pointRadius: 1.5, fill: true }] },
+                data: {
+                    labels: [],
+                    datasets: [{
+                        borderColor: '#16A34A',
+                        backgroundColor: 'rgba(34,197,94,0.2)', 
+                        tension: 0,
+                        borderWidth: 0.5,
+                        pointRadius: 1.0,
+                        fill: true
+                    }]
+                },
                 options: JSON.parse(JSON.stringify(opt)) 
             });
             cpmChart = new Chart(document.getElementById('cpmChart'), { 
                 type: 'line', 
-                data: { labels: [], datasets: [{ borderColor: '#2563EB', backgroundColor: 'rgba(59,130,246,0.2)', tension: 0, borderWidth: 2, pointRadius: 1.5, fill: true }] },
+                data: {
+                    labels: [],
+                    datasets: [{
+                        borderColor: '#2563EB',
+                        backgroundColor: 'rgba(59,130,246,0.2)',
+                        tension: 0,
+                        borderWidth: 0.5,
+                        pointRadius: 1.0,
+                        fill: true
+                    }]
+                },
                 options: JSON.parse(JSON.stringify(opt)) 
             });
         }
