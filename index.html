@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- 
   チラシノウラ
-  Version: 1.0.5 (更新日: 2026-05-16)
+  Version: 1.0.6 (更新日: 2026-05-20)
   Author: TK Lab. (https://x.com/TK_Lab_)
   Description: 好きな文字を好きなだけ打っていいタイピングゲーム。
   License: このコードは個人利用・改変・再配布自由ですが、商用利用はご遠慮ください。
@@ -21,6 +21,8 @@
       ・終了時、速度表示がトータル速度にならないバグを修正
     - 2026-05-16 (v1.0.5)
       ・グラフの見た目を少し調整
+    - 2026-05-20 (v1.0.6)
+      ・プレイ時間が長いとき、グラフを見やすいように調整
 -->
 <html lang="ja">
 <head>
@@ -299,7 +301,7 @@
     <footer>
         制作者：TK Lab.（<a href="https://x.com/TK_Lab_" target="_blank" rel="noopener noreferrer" style="color: #1DA1F2; text-decoration: underline;">@TK_Lab_</a>）<br>
         ゲームプレイのスクリーンショット、記録画像、プレイ動画のSNS投稿・アップロード・配信は自由です。<br>
-        Version 1.0.5
+        Version 1.0.6
     </footer>
 
     <script>
@@ -363,7 +365,7 @@
                         backgroundColor: 'rgba(34,197,94,0.2)', 
                         tension: 0,
                         borderWidth: 0.5,
-                        pointRadius: 1.0,
+                        pointRadius: 0.6,
                         fill: true
                     }]
                 },
@@ -378,7 +380,7 @@
                         backgroundColor: 'rgba(59,130,246,0.2)',
                         tension: 0,
                         borderWidth: 0.5,
-                        pointRadius: 1.0,
+                        pointRadius: 0.6,
                         fill: true
                     }]
                 },
@@ -419,7 +421,6 @@
 
                 const validHistory = history.filter(h => h.time >= 1);
 
-                // ==================== 速度表示 ====================
                 if (isEnded) {
                         const elapsedMin = elapsed / 60;
                         kpmEl.textContent = elapsedMin > 0 ? Math.round(totalKeystrokes / elapsedMin) : 0;
@@ -445,63 +446,145 @@
                         }
                 }
 
-                // ==================== グラフ更新 ====================
                 updateGraphs();
         }
 
         function updateGraphs() {
             const validHistory = history.filter(h => h.time >= 1);
+            if (validHistory.length === 0) return;
+
             const elapsed = startTimestamp ? Math.floor((Date.now() - startTimestamp) / 1000) : 0;
+            const isLongSession = isEnded && elapsed > 150;
 
-            if (isEnded) {
-                const maxTime = Math.max(WINDOW_SECONDS, elapsed);
-                
-                kpmChart.data.labels = validHistory.map(h => h.time);
-                kpmChart.data.datasets[0].data = validHistory.map((h, i) => {
-                    if (i === 0) return h.time > 0 ? Math.round(h.keystrokes / h.time * 60) : 0;
-                    const prev = validHistory[i-1];
-                    const dt = Math.max(1, h.time - prev.time);
-                    return Math.round((h.keystrokes - prev.keystrokes) / dt * 60);
-                });
-
-                cpmChart.data.labels = validHistory.map(h => h.time);
-                cpmChart.data.datasets[0].data = validHistory.map((h, i) => {
-                    if (i === 0) return h.time > 0 ? Math.round(h.chars / h.time * 60) : 0;
-                    const prev = validHistory[i-1];
-                    const dt = Math.max(1, h.time - prev.time);
-                    return Math.round((h.chars - prev.chars) / dt * 60);
-                });
-
-                kpmChart.options.scales.x.min = 0;
-                kpmChart.options.scales.x.max = maxTime;
-                cpmChart.options.scales.x.min = 0;
-                cpmChart.options.scales.x.max = maxTime;
-
-            } else {
-                const windowEnd = Math.max(WINDOW_SECONDS, elapsed);
-                const windowStart = windowEnd - WINDOW_SECONDS;
-
-                kpmChart.data.labels = validHistory.map(h => h.time);
-                kpmChart.data.datasets[0].data = validHistory.map((h, i) => {
-                    if (i === 0) return h.time > 0 ? Math.round(h.keystrokes / h.time * 60) : 0;
-                    const prev = validHistory[i-1];
-                    const dt = Math.max(1, h.time - prev.time);
-                    return Math.round((h.keystrokes - prev.keystrokes) / dt * 60);
-                });
-
-                cpmChart.data.labels = validHistory.map(h => h.time);
-                cpmChart.data.datasets[0].data = validHistory.map((h, i) => {
-                    if (i === 0) return h.time > 0 ? Math.round(h.chars / h.time * 60) : 0;
-                    const prev = validHistory[i-1];
-                    const dt = Math.max(1, h.time - prev.time);
-                    return Math.round((h.chars - prev.chars) / dt * 60);
-                });
-
-                kpmChart.options.scales.x.min = windowStart;
-                kpmChart.options.scales.x.max = windowEnd;
-                cpmChart.options.scales.x.min = windowStart;
-                cpmChart.options.scales.x.max = windowEnd;
+            let BIN = 5;
+            if (isLongSession) {
+                BIN = Math.floor(elapsed / 150) * 5;
+                BIN = Math.max(5, Math.min(60, BIN));
             }
+
+            const labels = validHistory.map(h => h.time);
+            const kpm1s = validHistory.map((h, i) => {
+                if (i === 0) return h.time > 0 ? Math.round(h.keystrokes / h.time * 60) : 0;
+                const prev = validHistory[i - 1];
+                const dt = Math.max(1, h.time - prev.time);
+                return Math.round((h.keystrokes - prev.keystrokes) / dt * 60);
+            });
+            const cpm1s = validHistory.map((h, i) => {
+                if (i === 0) return h.time > 0 ? Math.round(h.chars / h.time * 60) : 0;
+                const prev = validHistory[i - 1];
+                const dt = Math.max(1, h.time - prev.time);
+                return Math.round((h.chars - prev.chars) / dt * 60);
+            });
+
+            let kpmAvg = new Array(labels.length).fill(null);
+            let cpmAvg = new Array(labels.length).fill(null);
+
+            if (isLongSession) {
+                for (let t = BIN; t <= elapsed; t += BIN) {
+                    const idx = labels.findIndex(time => time >= t);
+                    if (idx === -1) continue;
+
+                    const endIdx = validHistory.findIndex(h => h.time > t);
+                    const startIdx = validHistory.findIndex(h => h.time > t - BIN);
+
+                    const prev = startIdx > 0 ? validHistory[startIdx - 1] : { time: 0, keystrokes: 0, chars: 0 };
+                    const curr = endIdx > 0 ? validHistory[endIdx - 1] : validHistory[validHistory.length - 1];
+
+                    const dt = Math.max(1, curr.time - prev.time);
+                    kpmAvg[idx] = Math.round((curr.keystrokes - prev.keystrokes) / dt * 60);
+                    cpmAvg[idx] = Math.round((curr.chars - prev.chars) / dt * 60);
+                }
+            }
+
+            let xMin, xMax;
+            if (isEnded) {
+                xMin = 0;
+                xMax = Math.max(WINDOW_SECONDS, elapsed);
+            } else {
+                xMax = Math.max(WINDOW_SECONDS, elapsed);
+                xMin = xMax - WINDOW_SECONDS;
+            }
+
+            kpmChart.data.labels = labels;
+            kpmChart.data.datasets[0].data = kpm1s;
+            if (isLongSession) {
+                if (kpmChart.data.datasets.length < 2) {
+                    kpmChart.data.datasets.push({
+                        data: kpmAvg,
+                        borderColor: '#15803D',
+                        backgroundColor: 'transparent',
+                        tension: 0,
+                        borderWidth: 1.0,
+                        pointRadius: 1.2,
+                        spanGaps: true
+                    });
+                } else {
+                    kpmChart.data.datasets[1].data = kpmAvg;
+                }
+            } else if (kpmChart.data.datasets.length > 1) {
+                kpmChart.data.datasets.length = 1;
+            }
+            kpmChart.options.scales.x.min = xMin;
+            kpmChart.options.scales.x.max = xMax;
+
+            cpmChart.data.labels = labels;
+            cpmChart.data.datasets[0].data = cpm1s;
+            if (isLongSession) {
+                if (cpmChart.data.datasets.length < 2) {
+                    cpmChart.data.datasets.push({
+                        data: cpmAvg,
+                        borderColor: '#1E40AF',
+                        backgroundColor: 'transparent',
+                        tension: 0,
+                        borderWidth: 1.0,
+                        pointRadius: 1.2,
+                        spanGaps: true
+                    });
+                } else {
+                    cpmChart.data.datasets[1].data = cpmAvg;
+                }
+            } else if (cpmChart.data.datasets.length > 1) {
+                cpmChart.data.datasets.length = 1;
+            }
+            cpmChart.options.scales.x.min = xMin;
+            cpmChart.options.scales.x.max = xMax;
+
+            if (isEnded && isLongSession && cpmAvg.some(v => v !== null)) {
+                const validAvg = cpmAvg.filter(v => v !== null);
+                let minCPM = Math.min(...validAvg);
+                let maxCPM = Math.max(...validAvg);
+
+                minCPM = Math.min(minCPM, 0);
+
+                cpmChart.options.scales.y.min = minCPM;
+                cpmChart.options.scales.y.max = maxCPM;
+                if (cpmChart.options.scales.y.ticks) {
+                    delete cpmChart.options.scales.y.ticks.stepSize;
+                }
+                cpmChart.update();
+
+                const yScale = cpmChart.scales.y;
+                
+                let stepSize = null;
+                if (yScale._ticks && yScale._ticks.length >= 3) {
+                    stepSize = yScale._ticks[2].value - yScale._ticks[1].value;
+                } else if (yScale.ticks && yScale.ticks.length >= 2) {
+                    stepSize = yScale.ticks[2].value - yScale.ticks[1].value;
+                } 
+
+                if (stepSize && stepSize > 0) {
+                    let niceMin = Math.floor(minCPM / stepSize) * stepSize;
+                    const niceMax = Math.ceil(maxCPM / stepSize) * stepSize;
+
+                    if (niceMin > 0) niceMin = 0;
+                    if (niceMin < 0 && niceMax < 0) niceMax = 0;
+
+                    cpmChart.options.scales.y.min = niceMin;
+                    cpmChart.options.scales.y.max = niceMax;
+                } 
+
+                cpmChart.update();
+            } 
 
             if (isEnded) {
                 kpmChart.update();
@@ -562,20 +645,37 @@
             kpmEl.textContent = '—';
             cpmEl.textContent = '—';
 
+            // ==================== グラフを完全リセット ====================
             if (kpmChart) {
                 kpmChart.data.labels = []; 
                 kpmChart.data.datasets[0].data = [];
+                if (kpmChart.data.datasets.length > 1) kpmChart.data.datasets.length = 1;
+                
                 kpmChart.options.scales.x.min = 0;
                 kpmChart.options.scales.x.max = WINDOW_SECONDS;
+                // y軸もデフォルトに戻す
+                delete kpmChart.options.scales.y.min;
+                delete kpmChart.options.scales.y.max;
+                if (kpmChart.options.scales.y.ticks) {
+                    delete kpmChart.options.scales.y.ticks.stepSize;
+                }
                 kpmChart.update();
             }
+            
             if (cpmChart) {
                 cpmChart.data.labels = []; 
                 cpmChart.data.datasets[0].data = [];
+                if (cpmChart.data.datasets.length > 1) cpmChart.data.datasets.length = 1;
+                
                 cpmChart.options.scales.x.min = 0;
                 cpmChart.options.scales.x.max = WINDOW_SECONDS;
+                delete cpmChart.options.scales.y.min;
+                delete cpmChart.options.scales.y.max;
+                if (cpmChart.options.scales.y.ticks) {
+                    delete cpmChart.options.scales.y.ticks.stepSize;
+                }
                 cpmChart.update();
-            }
+            } 
 
             updateUserGuide();
         }
